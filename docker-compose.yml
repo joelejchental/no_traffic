@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  fastapi:
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.9
+    container_name: fastapi
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/test
+    ports:
+      - "8000:80"
+    volumes:
+      - ./app:/app
+    depends_on:
+      - mongodb
+    networks:
+      - test-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
