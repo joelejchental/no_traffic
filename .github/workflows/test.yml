@@ -23,20 +23,14 @@ jobs:
       with:
         python-version: 3.9  # You can change this to the version of Python you want to use.
 
-    - name: Install dependencies  # Step 3: Install dependencies
+    - name: Install dependencies  # Step 3: Run the install.sh script to install dependencies and activate virtual environment
       run: |
-        python -m venv venv  # Create a virtual environment.
-        source venv/bin/activate  # Activate the virtual environment.
-        pip install -r requirements.txt  # Install dependencies from requirements.txt.
+        bash install.sh  # Runs the install.sh script that sets up the virtual environment and installs dependencies.
 
     - name: Run tests  # Step 4: Run tests using pytest
       run: |
-        source venv/bin/activate  # Activate the virtual environment.
-        pytest --maxfail=1 --disable-warnings -q  # Run pytest with the specified flags:
-        # --maxfail=1: Stop after the first failure.
-        # --disable-warnings: Disable warnings during the test run.
-        # -q: Run tests in quiet mode, less verbose output.
-
+        pytest --maxfail=1 --disable-warnings  # Run pytest with the specified flags.
+      
     - name: Upload test results as artifacts  # Step 5: Upload test results as artifacts.
       uses: actions/upload-artifact@v3  # Use the upload-artifact action to store results.
       with:
