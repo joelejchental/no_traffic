@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, develop]
 
+env:
+  RUN_ID: ${{ github.run_id }}  # Unique for each workflow run
+
 jobs:
   test:
     runs-on: ubuntu-20.04
@@ -14,9 +17,29 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Docker Compose
+    - name: Set up Docker Compose with unique image names
       run: |
+        # Dynamically inject RUN_ID into docker-compose
+        sed -i "s/MY_RUN_ID/${{ github.run_id }}/g" docker-compose.yml
+
+        # Build & Run
         docker-compose up --build --abort-on-container-exit
+
+    - name: Save API Image as Artifact
+      run: |
+        docker save my-api-image-${{ github.run_id }} -o api-image.tar
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-image
+        path: api-image.tar
+
+    - name: Save Test Image as Artifact
+      run: |
+        docker save my-test-image-${{ github.run_id }} -o test-image.tar
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-image
+        path: test-image.tar
 
     - name: Upload pytest results
       if: always()

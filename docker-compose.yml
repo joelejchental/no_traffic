@@ -10,6 +10,7 @@ services:
 
   api:
     build: .
+    image: my-api-image-MY_RUN_ID
     depends_on:
       - mongo
     ports:
@@ -20,6 +21,7 @@ services:
 
   test:
     build: .
+    image: my-test-image-MY_RUN_ID
     depends_on:
       - api
     volumes:
