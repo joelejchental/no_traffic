@@ -1,61 +1,44 @@
-name: Run API Tests
+name: CI Pipeline  # Name of the GitHub Actions pipeline.
 
 on:
   push:
     branches:
-      - develop
-      - main
+      - main  # Run tests on push to the main branch
+      - develop  # Run tests on push to the develop branch
   pull_request:
     branches:
-      - develop
-      - main
+      - main  # Run tests on PRs targeting the main branch
+      - develop  # Run tests on PRs targeting the develop branch
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-
-    services:
-      mongo:
-        image: mongo:latest
-        options: --health-cmd="curl --silent --fail localhost:27017 || exit 1" --health-interval=30s --health-timeout=30s --health-retries=3
-        ports:
-          - 27017:27017
+    runs-on: ubuntu-latest  # The job runs on the latest Ubuntu runner provided by GitHub Actions.
 
     steps:
-    # Check out the repository
-    - name: Check out the repository
-      uses: actions/checkout@v2
+    - name: Checkout repository  # Step 1: Check out the code from the GitHub repository.
+      uses: actions/checkout@v2  # Uses the `actions/checkout` action to fetch the repo.
 
-    # Set up Python
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - name: Set up Python  # Step 2: Set up Python environment
+      uses: actions/setup-python@v2  # Sets up Python on the runner.
       with:
-        python-version: '3.9'
+        python-version: 3.9  # You can change this to the version of Python you want to use.
 
-    # Install dependencies
-    - name: Install dependencies
+    - name: Install dependencies  # Step 3: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest requests-mock
+        python -m venv venv  # Create a virtual environment.
+        source venv/bin/activate  # Activate the virtual environment.
+        pip install -r requirements.txt  # Install dependencies from requirements.txt.
 
-    # Run tests
-    - name: Run tests
+    - name: Run tests  # Step 4: Run tests using pytest
       run: |
-        pytest --maxfail=1 --disable-warnings -q
-      continue-on-error: true
+        source venv/bin/activate  # Activate the virtual environment.
+        pytest --maxfail=1 --disable-warnings -q  # Run pytest with the specified flags:
+        # --maxfail=1: Stop after the first failure.
+        # --disable-warnings: Disable warnings during the test run.
+        # -q: Run tests in quiet mode, less verbose output.
 
-    # Upload test reports as artifacts
-    - name: Upload test reports as artifacts
-      if: always()
-      uses: actions/upload-artifact@v2
+    - name: Upload test results as artifacts  # Step 5: Upload test results as artifacts.
+      uses: actions/upload-artifact@v3  # Use the upload-artifact action to store results.
       with:
-        name: test-reports
-        path: ./tests/test_reports/
-
-    # Archive and store pytest test results (optional)
-    - name: Archive Test Results
-      if: always()
-      run: |
-        mkdir -p ./tests/test_reports/
-        mv pytest-report.xml ./tests/test_reports/
+        name: test-results  # Name for the artifact.
+        path: path/to/test-results/*.xml  # Path to test result files (adjust as needed).
