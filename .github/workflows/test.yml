@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 env:
-  RUN_ID: ${{ github.run_id }}
+  IMAGE_ID: oms-${{ github.run_id }}
 
 jobs:
   test:
@@ -17,32 +17,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Inject run ID & Start Docker Compose
+    - name: Build & Run Docker Compose
       run: |
-        sed -i "s/MY_RUN_ID/${{ github.run_id }}/g" docker-compose.yml
-        docker-compose up --build --abort-on-container-exit
+        docker-compose -p ${{ env.IMAGE_ID }} up --build --abort-on-container-exit
 
-    - name: Save API Image
-      run: docker save my-api-image-${{ github.run_id }} -o api-image.tar
+    - name: Commit API Container to Image
+      run: |
+        docker ps -a
+        API_CONTAINER=$(docker ps -aqf "name=${{ env.IMAGE_ID }}_api")
+        docker commit $API_CONTAINER ${{ env.IMAGE_ID }}-api:latest
+        docker save ${{ env.IMAGE_ID }}-api:latest -o api-image.tar
+
+    - name: Commit Test Container to Image
+      run: |
+        TEST_CONTAINER=$(docker ps -aqf "name=${{ env.IMAGE_ID }}_test")
+        docker commit $TEST_CONTAINER ${{ env.IMAGE_ID }}-test:latest
+        docker save ${{ env.IMAGE_ID }}-test:latest -o test-image.tar
 
     - name: Upload API Image Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: api-image
+        name: api-image-${{ env.IMAGE_ID }}
         path: api-image.tar
-
-    - name: Save Test Image
-      run: docker save my-test-image-${{ github.run_id }} -o test-image.tar
 
     - name: Upload Test Image Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: test-image
+        name: test-image-${{ env.IMAGE_ID }}
         path: test-image.tar
-
-    - name: Upload pytest results
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: pytest-results
-        path: tests/.pytest_cache/
