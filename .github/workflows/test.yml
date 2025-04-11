@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 env:
-  RUN_ID: ${{ github.run_id }}
+  IMAGE_ID: oms-${{ github.run_id }}
 
 jobs:
   test:
@@ -17,32 +17,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Inject run ID & Start Docker Compose
+    - name: Build Docker Image with Repository
       run: |
-        sed -i "s/MY_RUN_ID/${{ github.run_id }}/g" docker-compose.yml
-        docker-compose up --build --abort-on-container-exit
+        # Build the Docker image using the Dockerfile in the repo
+        docker build -t ${{ env.IMAGE_ID }} .
 
-    - name: Save API Image
-      run: docker save my-api-image-${{ github.run_id }} -o api-image.tar
+    - name: Run tests in Docker Container
+      run: |
+        # Run pytest in the container
+        docker run --rm -v $GITHUB_WORKSPACE:/workspace -w /workspace ${{ env.IMAGE_ID }} \
+          sh -c "pip install -r requirements.txt && PYTHONPATH=tests pytest tests -v" > result.log || true
 
-    - name: Upload API Image Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: api-image
-        path: api-image.tar
-
-    - name: Save Test Image
-      run: docker save my-test-image-${{ github.run_id }} -o test-image.tar
-
-    - name: Upload Test Image Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-image
-        path: test-image.tar
-
-    - name: Upload pytest results
-      if: always()
+    - name: Upload Test Results as Artifact
       uses: actions/upload-artifact@v3
       with:
         name: pytest-results
-        path: tests/.pytest_cache/
+        path: result.log
