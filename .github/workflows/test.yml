@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 env:
-  RUN_ID: ${{ github.run_id }}  # Unique for each workflow run
+  RUN_ID: ${{ github.run_id }}
 
 jobs:
   test:
@@ -17,25 +17,24 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Docker Compose with unique image names
+    - name: Inject run ID & Start Docker Compose
       run: |
-        # Dynamically inject RUN_ID into docker-compose
         sed -i "s/MY_RUN_ID/${{ github.run_id }}/g" docker-compose.yml
-
-        # Build & Run
         docker-compose up --build --abort-on-container-exit
 
-    - name: Save API Image as Artifact
-      run: |
-        docker save my-api-image-${{ github.run_id }} -o api-image.tar
+    - name: Save API Image
+      run: docker save my-api-image-${{ github.run_id }} -o api-image.tar
+
+    - name: Upload API Image Artifact
       uses: actions/upload-artifact@v3
       with:
         name: api-image
         path: api-image.tar
 
-    - name: Save Test Image as Artifact
-      run: |
-        docker save my-test-image-${{ github.run_id }} -o test-image.tar
+    - name: Save Test Image
+      run: docker save my-test-image-${{ github.run_id }} -o test-image.tar
+
+    - name: Upload Test Image Artifact
       uses: actions/upload-artifact@v3
       with:
         name: test-image
