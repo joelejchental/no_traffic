@@ -19,14 +19,14 @@ jobs:
 
     - name: Build Docker Image with Repository
       run: |
-        # Specify the correct path to the Dockerfile if not in the root directory
-        docker build -t ${{ env.IMAGE_ID }} -f path/to/Dockerfile .
+        # Build the Docker image using the Dockerfile in the repo
+        docker build -t ${{ env.IMAGE_ID }} .
 
     - name: Run tests in Docker Container
       run: |
         # Run pytest in the container
         docker run --rm -v $GITHUB_WORKSPACE:/workspace -w /workspace ${{ env.IMAGE_ID }} \
-          sh -c "pip install -r requirements.txt && PYTHONPATH=tests pytest tests -v" > result.log || true
+          sh -c "pip install -r requirements.txt && PYTHONPATH=tests pytest tests -v | tee result.log"
 
     - name: Upload Test Results as Artifact
       uses: actions/upload-artifact@v4
