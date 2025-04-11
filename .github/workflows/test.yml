@@ -19,8 +19,8 @@ jobs:
 
     - name: Build Docker Image with Repository
       run: |
-        # Build the Docker image using the Dockerfile in the repo
-        docker build -t ${{ env.IMAGE_ID }} .
+        # Specify the correct path to the Dockerfile if not in the root directory
+        docker build -t ${{ env.IMAGE_ID }} -f path/to/Dockerfile .
 
     - name: Run tests in Docker Container
       run: |
