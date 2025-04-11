@@ -1,28 +1,39 @@
-version: '3.8'
+name: CI Pipeline  # Name of the GitHub Actions pipeline.
 
-services:
-  fastapi:
-    image: tiangolo/uvicorn-gunicorn-fastapi:python3.9
-    container_name: fastapi
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/test
-    ports:
-      - "8000:80"
-    volumes:
-      - ./app:/app
-    depends_on:
-      - mongodb
-    networks:
-      - test-network
+on:
+  push:
+    branches:
+      - main  # Run tests on push to the main branch
+      - develop  # Run tests on push to the develop branch
+  pull_request:
+    branches:
+      - main  # Run tests on PRs targeting the main branch
+      - develop  # Run tests on PRs targeting the develop branch
 
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    networks:
-      - test-network
+jobs:
+  test:
+    runs-on: ubuntu-20.04  # Use Ubuntu 20.04 runner to test if the issue persists with a different runner image.
 
-networks:
-  test-network:
-    driver: bridge
+    steps:
+    - name: Checkout repository  # Step 1: Check out the code from the GitHub repository.
+      uses: actions/checkout@v2  # Uses the `actions/checkout` action to fetch the repo.
+
+    - name: Set up Python  # Step 2: Set up Python environment
+      uses: actions/setup-python@v2  # Sets up Python on the runner.
+      with:
+        python-version: 3.9  # You can change this to the version of Python you want to use.
+
+    - name: Install dependencies  # Step 3: Run the install.sh script to install dependencies and activate virtual environment
+      run: |
+        bash install.sh  # Runs the install.sh script that sets up the virtual environment and installs dependencies.
+
+    - name: Run tests  # Step 4: Run tests using pytest
+      run: |
+        source venv/bin/activate  # Activate the virtual environment, just in case it's not activated globally
+        pytest --maxfail=1 --disable-warnings -q  # Run pytest with the specified flags.
+
+    - name: Upload test results as artifacts  # Step 5: Upload test results as artifacts.
+      uses: actions/upload-artifact@e3c4c7e564e65c4c8c7b1b241db3978a346fc3da  # Use a fixed commit SHA of the upload-artifact action to avoid versioning issues.
+      with:
+        name: test-results  # Name for the artifact.
+        path: path/to/test-results/*.xml  # Adjust this path as needed to match your test results location.

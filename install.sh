@@ -6,5 +6,3 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-echo "Setup complete. Run tests using 'pytest'"
