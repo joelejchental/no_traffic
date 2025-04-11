@@ -1,38 +1,26 @@
-name: CI Pipeline  # Name of the GitHub Actions pipeline.
+name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main  # Run tests on push to the main branch
-      - develop  # Run tests on push to the develop branch
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main  # Run tests on PRs targeting the main branch
-      - develop  # Run tests on PRs targeting the develop branch
+    branches: [main, develop]
 
 jobs:
   test:
-    runs-on: ubuntu-latest  # The job runs on the latest Ubuntu runner provided by GitHub Actions.
+    runs-on: ubuntu-20.04
 
     steps:
-    - name: Checkout repository  # Step 1: Check out the code from the GitHub repository.
-      uses: actions/checkout@v2  # Uses the `actions/checkout` action to fetch the repo.
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-    - name: Set up Python  # Step 2: Set up Python environment
-      uses: actions/setup-python@v2  # Sets up Python on the runner.
-      with:
-        python-version: 3.9  # You can change this to the version of Python you want to use.
-
-    - name: Install dependencies  # Step 3: Run the install.sh script to install dependencies and activate virtual environment
+    - name: Set up Docker Compose
       run: |
-        bash install.sh  # Runs the install.sh script that sets up the virtual environment and installs dependencies.
+        docker-compose up --build --abort-on-container-exit
 
-    - name: Run tests  # Step 4: Run tests using pytest
-      run: |
-        pytest --maxfail=1 --disable-warnings  # Run pytest with the specified flags.
-      
-    - name: Upload test results as artifacts  # Step 5: Upload test results as artifacts.
-      uses: actions/upload-artifact@v3  # Use the upload-artifact action to store results.
+    - name: Upload pytest results
+      if: always()
+      uses: actions/upload-artifact@v3
       with:
-        name: test-results  # Name for the artifact.
-        path: path/to/test-results/*.xml  # Path to test result files (adjust as needed).
+        name: pytest-results
+        path: tests/.pytest_cache/
