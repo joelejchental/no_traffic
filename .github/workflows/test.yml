@@ -58,7 +58,7 @@ jobs:
 
     - name: Set remote with PAT
       run: |
-        git remote set-url origin https://x-access-token:${{ secrets.no_traffic }}@github.com/${{ github.repository }}.git
+        git remote set-url origin https://x-access-token:${{ secrets.no_traffic_token }}@github.com/${{ github.repository }}.git
 
     - name: Tag release
       run: |
