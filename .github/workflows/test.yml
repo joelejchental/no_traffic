@@ -12,19 +12,19 @@ env:
 jobs:
   test:
     runs-on: ubuntu-22.04
+    outputs:
+      test_passed: ${{ steps.test_outcome.outcome == 'success' }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
     - name: Build Docker Image with Repository
-      run: |
-        # Build the Docker image using the Dockerfile in the repo
-        docker build -t ${{ env.IMAGE_ID }} .
+      run: docker build -t ${{ env.IMAGE_ID }} .
 
     - name: Run tests in Docker Container
+      id: test_outcome
       run: |
-        # Run pytest in the container
         docker run --rm -v $GITHUB_WORKSPACE:/workspace -w /workspace ${{ env.IMAGE_ID }} \
           sh -c "pip install -r requirements.txt && PYTHONPATH=tests pytest tests -v | tee result.log"
 
@@ -33,3 +33,23 @@ jobs:
       with:
         name: pytest-results
         path: result.log
+
+  deploy:
+    if: ${{ github.ref == 'refs/heads/main' && needs.test.result == 'success' }}
+    needs: test
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Echo Deploy Step
+      run: echo "Deploying to production because tests passed on main branch!"
+
+  tag_release:
+    if: ${{ github.ref == 'refs/heads/main' && needs.test.result == 'success' }}
+    needs: test
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Tag release
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git tag -a v1.0.${{ github.run_number }} -m "Release v1.0.${{ github.run_number }}"
+        git push origin v1.0.${{ github.run_number }}
